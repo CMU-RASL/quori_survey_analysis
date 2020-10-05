@@ -9,7 +9,10 @@ class User(object):
         self.start_time = start_time
         self.end_time = end_time
         self.mturk_id = mturk_id
-
+        self.ages = ['18-24', '25-34', '35-44', '45-54', '55-64', '65-74', '75-84', '85 or older']
+        self.genders = ['Male', 'Female', 'Other']
+        self.ethnicities = ['White', 'Black or African American', 'American Indian or Alaska Native', 'Asian', 'Native Hawaiian or Pacific Islander', 'Other']
+        self.robot = ['Not at all', 'Slightly', 'Moderately', 'Very', 'Extremely']
         self.process_row(row)
 
     def process_row(self, row):
@@ -38,3 +41,26 @@ class User(object):
                     if len(element) > 0:
                         self.responses[ii,id] = key[element]
                 ii += 1
+
+        if len(row[-10]) > 0:
+            age_ind = self.ages.index(row[-10])
+        else:
+            age_ind = -1
+        if len(row[-9]) > 0:
+            gender_ind = self.genders.index(row[-9])
+        else:
+            gender_ind = -1
+        if len(row[-8]) > 0:
+            res = row[-8].split(',')
+            ethnicity_inds = []
+            for r in res:
+                ethnicity_inds.append(self.ethnicities.index(r))
+        else:
+            ethnicity_inds = [-1]
+        if len(row[-7]) > 0:
+            print(row[-7])
+        if len(row[-6]) > 0:
+            robot_ind = self.robot.index(row[-6])
+        else:
+            robot_ind = -1
+        self.demographics = [age_ind, gender_ind, ethnicity_inds, robot_ind]

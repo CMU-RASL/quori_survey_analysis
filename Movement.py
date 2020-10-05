@@ -28,28 +28,13 @@ class Movement(object):
         self.index = index
         self.responses = None
 
+    def get_constraint(self, group):
+        return eval("self."+group)
+
     def check_constraints(self, groups=[], vals=[]):
         for group, val in zip(groups, vals):
 
             if not val in eval("self."+group):
                 return False
         return True
-        # torso_start, torso_start_deg, \
-        #                     torso_end, torso_end_deg, torso_speed, left_arm_start, \
-        #                     left_arm_end, left_arm_speed, right_arm_start, right_arm_end, \
-        #                     right_arm_speed
-        # if (self.torso_start in torso_start) and \
-        #     (self.torso_start_deg in torso_start_deg) and \
-        #     (self.torso_end in torso_end) and \
-        #     (self.torso_end_deg in torso_end_deg) and \
-        #     (self.torso_speed in torso_speed) and \
-        #     (self.left_arm_start in left_arm_start) and \
-        #     (self.left_arm_end in left_arm_end) and \
-        #     (self.left_arm_speed in left_arm_speed) and \
-        #     (self.right_arm_start in right_arm_start) and \
-        #     (self.right_arm_end in right_arm_end) and \
-        #     (self.right_arm_speed in right_arm_speed):
-        #
-        #     return True
-        # else:
-        #     return False
+        
