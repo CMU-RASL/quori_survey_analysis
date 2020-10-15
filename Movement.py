@@ -27,6 +27,13 @@ class Movement(object):
             self.left_arm_speed = 'none'
         self.index = index
         self.responses = None
+        if self.left_arm_speed == self.right_arm_speed:
+            self.symmetric = 'true'
+        else:
+            self.symmetric = 'false'
+        self.arm_speed = self.right_arm_speed
+        self.arm_end = self.right_arm_end
+
 
     def get_constraint(self, group):
         return eval("self."+group)
@@ -37,4 +44,3 @@ class Movement(object):
             if not val in eval("self."+group):
                 return False
         return True
-        

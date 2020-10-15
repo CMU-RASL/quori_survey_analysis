@@ -4,7 +4,22 @@ from User import User
 import csv
 from datetime import datetime, timedelta
 import numpy as np
+
+#If generating pgf
+# import matplotlib as mpl
+# mpl.use('pgf')
+
 import matplotlib.pyplot as plt
+
+#If generating pgf
+# plt.rcParams['text.latex.preamble']=[r"\usepackage{lmodern}"]
+# params = {'text.usetex' : True,
+#           'font.size' : 11,
+#           'font.family' : 'lmodern',
+#           'text.latex.unicode': True,
+#           }
+# plt.rcParams.update(params)
+
 
 #Read dof_csv_filename
 def read_dof_csv(filename):
@@ -95,3 +110,19 @@ def create_batch(user_arr, movement_arr):
     batch.apply_responses()
 
     return batch
+
+def response_hist(batch):
+    lengths = []
+    for response in batch.responses:
+        lengths.append(np.where(response[:,0] > -1)[0].shape[0])
+    # for length in lengths:
+    #     print(length)
+    unique, counts = np.unique(lengths, return_counts=True)
+    plt.bar(unique, counts, width=1)
+    plt.xlabel('Number of Responses per Video', fontsize=20)
+    plt.ylabel('Number of Videos', fontsize=20)
+    plt.xticks(fontsize= 12)
+    plt.yticks(fontsize= 12)
+    plt.tight_layout(.5)
+    # plt.show()
+    plt.savefig('resp_hist.pgf', backend='pgf')
