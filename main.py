@@ -25,6 +25,9 @@ movement_arr = read_dof_csv(dof_csv_filename)
 #Step 3: Create Survey Results Object
 batch = create_batch(user_arr, movement_arr)
 
+#Compare Emotions
+batch.compare_emotions()
+
 #Demographics
 # batch.test_demo_group()
 

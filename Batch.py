@@ -5,19 +5,19 @@ import csv
 import scipy.stats as stats
 
 #If generating pgf
-# import matplotlib as mpl
-# mpl.use('pgf')
+import matplotlib as mpl
+mpl.use('pgf')
 
 import matplotlib.pyplot as plt
 
 #If generating pgf
-# plt.rcParams['text.latex.preamble']=[r"\usepackage{lmodern}"]
-# params = {'text.usetex' : True,
-#           'font.size' : 11,
-#           'font.family' : 'lmodern',
-#           'text.latex.unicode': True,
-#           }
-# plt.rcParams.update(params)
+plt.rcParams['text.latex.preamble']=[r"\usepackage{lmodern}"]
+params = {'text.usetex' : True,
+          'font.size' : 11,
+          'font.family' : 'lmodern',
+          'text.latex.unicode': True,
+          }
+plt.rcParams.update(params)
 
 class Batch:
     """docstring for Batch."""
@@ -334,6 +334,55 @@ class Batch:
                         else:
                             print('\t\t{}-{} has a mean of {:.3f} and median of {:.3f}'.format(group, val, -1, -1))
 
+    def compare_emotions(self):
+        likert = []
+        for e1 in self.emotion_labels:
+            likert.append([])
+
+        for movement_id, movement in enumerate(self.movements):
+            cur_ind = np.where(self.responses[movement_id,:,0] > -1)[0]
+            for ind in cur_ind:
+                for e_ind in range(8):
+                    likert[e_ind].append(self.responses[movement_id, ind, e_ind])
+        likert = np.array(likert).T
+        correlations, p_values = stats.spearmanr(likert)
+        for ii in range(8):
+            for jj in range(8):
+                if ii <= jj:
+                    correlations[ii, jj] = np.nan
+        fig, ax = plt.subplots(figsize=(10,8))
+        current_cmap = plt.cm.get_cmap('Blues')
+        current_cmap.set_bad(color='black')
+
+        im = ax.imshow(correlations, cmap=current_cmap)
+
+        ax.set_xticks(np.arange(8))
+        ax.set_yticks(np.arange(8))
+        ax.set_xticklabels(self.emotion_labels,fontsize= 14)
+        ax.set_yticklabels(self.emotion_labels,fontsize= 14)
+        cbar = ax.figure.colorbar(im, ax=ax)
+        cbar.ax.set_ylabel('Correlation', rotation=-90, va="bottom", fontsize=20)
+        # cbar.ax.set_yticklabels(np.linspace(-1, 1, 11), fontsize=12)
+        plt.tight_layout(.5)
+        fig.savefig('emotion_corr.pgf')
+        plt.show()
+
+
+        # data = {'User': user, 'Likert': likert, 'Emotion': emotion}
+        # df = pd.DataFrame(data=data)
+        # pc = sp.posthoc_nemenyi_friedman(df, y_col='Likert', block_col='User', group_col='Emotion', melted=True)
+        # col_names = pc.columns.values
+        # new_comparisons = []
+        # for comparison in comparisons:
+        #     if comparison[0] in col_names and comparison[1] in col_names:
+        #         new_comparisons.append(comparison)
+        # selected_pc = pc.stack().loc[new_comparisons]
+        #
+        # for comp, p_value in zip(new_comparisons, selected_pc):
+        #     if p_value < 0.05:
+        #         emotion = comp[0].split('-')[0]
+        #         print('\t', comp)
+        #         print('\t{} is significantly different with a p-value of {:.3f}'.format(emotion, p_value))
     # def check_balanced_2(self, group1, group2):
     #     for g, vs in self.constraints:
     #         if group1 == g:
