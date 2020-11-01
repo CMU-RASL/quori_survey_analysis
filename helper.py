@@ -126,3 +126,33 @@ def response_hist(batch):
     plt.tight_layout(.5)
     # plt.show()
     plt.savefig('resp_hist.pgf', backend='pgf')
+
+def analyze_demographics(user_arr):
+    ages = ['18-24', '25-34', '35-44', '45-54', '55-64', '65-74', '75-84', '85 or older']
+    genders = ['Male', 'Female', 'Other']
+    ethnicities = ['White', 'Black or African American', 'American Indian or Alaska Native', 'Asian', 'Native Hawaiian or Pacific Islander', 'Other']
+    robot = ['Not at all', 'Slightly', 'Moderately', 'Very', 'Extremely']
+
+    age_arr = np.zeros(len(ages))
+    gender_arr = np.zeros(len(genders))
+    ethnicity_arr = np.zeros(len(ethnicities))
+    robot_arr = np.zeros(len(robot))
+    for user in user_arr:
+        age_arr[user.demographics[0]] += 1
+        gender_arr[user.demographics[1]] += 1
+        for v in user.demographics[2]:
+            ethnicity_arr[v] += 1
+        robot_arr[user.demographics[3]] += 1
+
+    print('Ages', sum(age_arr))
+    for ind, val in enumerate(ages):
+        print('\t{} - {:.0f} Participants'.format(val, age_arr[ind]))
+    print('Gender', sum(gender_arr))
+    for ind, val in enumerate(genders):
+        print('\t{} - {:.0f} Participants'.format(val, gender_arr[ind]))
+    print('Ethnicities', sum(ethnicity_arr))
+    for ind, val in enumerate(ethnicities):
+        print('\t{} - {:.0f} Participants'.format(val, ethnicity_arr[ind]))
+    print('Robot', sum(robot_arr))
+    for ind, val in enumerate(robot):
+        print('\t{} - {:.0f} Participants'.format(val, robot_arr[ind]))

@@ -6,18 +6,18 @@ import scipy.stats as stats
 
 #If generating pgf
 import matplotlib as mpl
-mpl.use('pgf')
+# mpl.use('pgf')
 
 import matplotlib.pyplot as plt
-
+from statannot import add_stat_annotation
 #If generating pgf
-plt.rcParams['text.latex.preamble']=[r"\usepackage{lmodern}"]
-params = {'text.usetex' : True,
-          'font.size' : 11,
-          'font.family' : 'lmodern',
-          'text.latex.unicode': True,
-          }
-plt.rcParams.update(params)
+# plt.rcParams['text.latex.preamble']=[r"\usepackage{lmodern}"]
+# params = {'text.usetex' : True,
+#           'font.size' : 11,
+#           'font.family' : 'lmodern',
+#           'text.latex.unicode': True,
+#           }
+# plt.rcParams.update(params)
 
 class Batch:
     """docstring for Batch."""
@@ -257,7 +257,7 @@ class Batch:
             selected_pc = pc.stack().loc[new_comparisons]
 
             for comp, p_value in zip(comparisons, selected_pc):
-                if p_value < 0.1:
+                if p_value < 0.05:
                     emotion = comp[0].split('-')[0]
                     print('\t', comp)
                     print('\t{} is significantly different with a p-value of {:.3f}'.format(emotion, p_value))
@@ -368,21 +368,188 @@ class Batch:
         plt.show()
 
 
-        # data = {'User': user, 'Likert': likert, 'Emotion': emotion}
-        # df = pd.DataFrame(data=data)
-        # pc = sp.posthoc_nemenyi_friedman(df, y_col='Likert', block_col='User', group_col='Emotion', melted=True)
-        # col_names = pc.columns.values
-        # new_comparisons = []
-        # for comparison in comparisons:
-        #     if comparison[0] in col_names and comparison[1] in col_names:
-        #         new_comparisons.append(comparison)
-        # selected_pc = pc.stack().loc[new_comparisons]
-        #
-        # for comp, p_value in zip(new_comparisons, selected_pc):
-        #     if p_value < 0.05:
-        #         emotion = comp[0].split('-')[0]
-        #         print('\t', comp)
-        #         print('\t{} is significantly different with a p-value of {:.3f}'.format(emotion, p_value))
+    def interaction_effect(self):
+        def label_diff(i,j,text,X,Y, ax):
+            x = (X[i]+X[j])/2
+            y = 1.1*max(Y[i], Y[j])
+            dx = abs(X[i]-X[j])
+
+            props = {'connectionstyle':'bar','arrowstyle':'-',\
+                         'shrinkA':20,'shrinkB':20,'linewidth':2}
+            # ax.annotate(text, xy=(X[i],y+7), zorder=10)
+            ax.annotate('', xy=(X[i],y), xytext=(X[j],y), arrowprops=props)
+
+
+        for g1, vs1 in self.constraints:
+            for g2, vs2 in self.constraints:
+                if not (g1 == g2):
+                    likert = [[], [], []]
+                    user = [[], [], []]
+                    emotion = [[], [], []]
+                    comparisons = [[], [], []]
+                    for e in self.emotion_labels:
+                        for val1 in vs1:
+                            str1 = '{}-{}'.format(e, val1)
+                            for val2 in vs1:
+                                str2 = '{}-{}'.format(e, val2)
+                                if (not val1 == val2) and (not (str2, str1) in comparisons[0]):
+                                    comparisons[0].append((str1, str2))
+
+                        for val1 in vs2:
+                            str1 = '{}-{}'.format(e, val1)
+                            for val2 in vs2:
+                                str2 = '{}-{}'.format(e, val2)
+                                if (not val1 == val2) and (not (str2, str1) in comparisons[1]):
+                                    comparisons[1].append((str1, str2))
+
+                        for val1 in vs1:
+                            for val2 in vs2:
+                                str1 = '{}-{}-{}'.format(e, val1, val2)
+                                for val1_1 in vs1:
+                                    for val2_1 in vs2:
+                                        str2 = '{}-{}-{}'.format(e, val1_1, val2_1)
+                                        if (not val1 == val1_1) and (not val2 == val2_1) and (not (str2, str1) in comparisons[2]):
+                                            comparisons[2].append((str1, str2))
+
+                    for movement_id, movement in enumerate(self.movements):
+                        for val1 in vs1:
+                            if movement.check_constraints(groups=[g1], vals=[val1]):
+                                cur_ind = np.where(self.responses[movement_id,:,0] > -1)[0]
+                                for ind in cur_ind:
+                                    for e_ind in range(8):
+                                        likert[0].append(self.responses[movement_id, ind, e_ind])
+                                        user[0].append(ind)
+                                        emotion[0].append('{}-{}'.format(self.emotion_labels[e_ind], val1))
+                            for val2 in vs2:
+                                if movement.check_constraints(groups=[g2], vals=[val2]):
+                                    cur_ind = np.where(self.responses[movement_id,:,0] > -1)[0]
+                                    for ind in cur_ind:
+                                        for e_ind in range(8):
+                                            likert[1].append(self.responses[movement_id, ind, e_ind])
+                                            user[1].append(ind)
+                                            emotion[1].append('{}-{}'.format(self.emotion_labels[e_ind], val2))
+
+                            for val1 in vs1:
+                                for val2 in vs2:
+                                    if movement.check_constraints(groups=[g1, g2], vals=[val1, val2]):
+                                        cur_ind = np.where(self.responses[movement_id,:,0] > -1)[0]
+                                        for ind in cur_ind:
+                                            for e_ind in range(8):
+                                                likert[2].append(self.responses[movement_id, ind, e_ind])
+                                                user[2].append(ind)
+                                                emotion[2].append('{}-{}-{}'.format(self.emotion_labels[e_ind], val1, val2))
+
+                    fig, ax = plt.subplots(3, 8, sharey = True, figsize=(20,10))
+
+                    data = {'User': user[0], 'Likert': likert[0], 'Emotion': emotion[0]}
+                    df = pd.DataFrame(data=data)
+                    pc = sp.posthoc_nemenyi_friedman(df, y_col='Likert', block_col='User', group_col='Emotion', melted=True)
+                    col_names = pc.columns.values
+                    new_comparisons = []
+                    for comparison in comparisons[0]:
+                        if comparison[0] in col_names and comparison[1] in col_names:
+                            new_comparisons.append(comparison)
+                    selected_pc = pc.stack().loc[new_comparisons]
+
+                    for e_ind, e in enumerate(self.emotion_labels):
+                        d_mean = []
+                        for val1 in vs1:
+                            selected = df.loc[df['Emotion'] == '{}-{}'.format(e, val1)]
+                            if selected.shape[0] > 0:
+                                d_mean.append(np.mean(selected['Likert']))
+                            else:
+                                d_mean.append(0)
+                        ax[0, e_ind].bar(np.arange(len(vs1)), d_mean, tick_label=vs1)
+
+                        for ind1, val1_1 in enumerate(vs1):
+                            str1 = '{}-{}'.format(e, val1_1)
+                            for ind2, val1_2 in enumerate(vs1):
+                                str2 = '{}-{}'.format(e, val1_2)
+                                if ((str1, str2) in new_comparisons):
+                                    p_value = selected_pc[str1, str2]
+                                    if p_value < 0.05:
+                                        label_diff(ind1,ind2,'p=0.0370',np.arange(len(vs1)),d_mean, ax[0, e_ind])
+                        ax[0, e_ind].set_ylim([0, 5])
+                        ax[0, e_ind].set_title(e)
+                    ax[0,0].set_ylabel(g1)
+
+                    data = {'User': user[1], 'Likert': likert[1], 'Emotion': emotion[1]}
+                    df = pd.DataFrame(data=data)
+                    pc = sp.posthoc_nemenyi_friedman(df, y_col='Likert', block_col='User', group_col='Emotion', melted=True)
+                    col_names = pc.columns.values
+                    new_comparisons = []
+                    for comparison in comparisons[1]:
+                        if comparison[0] in col_names and comparison[1] in col_names:
+                            new_comparisons.append(comparison)
+                    selected_pc = pc.stack().loc[new_comparisons]
+
+                    for e_ind, e in enumerate(self.emotion_labels):
+                        d_mean = []
+                        for val2 in vs2:
+                            selected = df.loc[df['Emotion'] == '{}-{}'.format(e, val2)]
+                            if selected.shape[0] > 0:
+                                d_mean.append(np.mean(selected['Likert']))
+                            else:
+                                d_mean.append(0)
+                        ax[1, e_ind].bar(np.arange(len(vs2)), d_mean, tick_label=vs2)
+
+                        for ind1, val2_1 in enumerate(vs2):
+                            str1 = '{}-{}'.format(e, val2_1)
+                            for ind2, val2_2 in enumerate(vs2):
+                                str2 = '{}-{}'.format(e, val2_2)
+                                if ((str1, str2) in new_comparisons):
+                                    p_value = selected_pc[str1, str2]
+                                    if p_value < 0.05:
+                                        label_diff(ind1,ind2,'p=0.0370',np.arange(len(vs2)),d_mean, ax[1, e_ind])
+                        ax[1, e_ind].set_ylim([0, 5])
+                    ax[1,0].set_ylabel(g2)
+
+                    data = {'User': user[2], 'Likert': likert[2], 'Emotion': emotion[2]}
+                    df = pd.DataFrame(data=data)
+                    pc = sp.posthoc_nemenyi_friedman(df, y_col='Likert', block_col='User', group_col='Emotion', melted=True)
+                    col_names = pc.columns.values
+                    new_comparisons = []
+                    for comparison in comparisons[2]:
+                        if comparison[0] in col_names and comparison[1] in col_names:
+                            new_comparisons.append(comparison)
+                    selected_pc = pc.stack().loc[new_comparisons]
+
+                    for e_ind, e in enumerate(self.emotion_labels):
+                        d_mean = []
+                        labels = []
+                        for val1 in vs1:
+                            for val2 in vs2:
+                                selected = df.loc[df['Emotion'] == '{}-{}-{}'.format(e, val1, val2)]
+                                if selected.shape[0] > 0:
+                                    d_mean.append(np.mean(selected['Likert']))
+                                else:
+                                    d_mean.append(0)
+                                labels.append('{}\n{}'.format(val1, val2))
+                        ax[2, e_ind].bar(np.arange(len(labels)), d_mean, tick_label=labels)
+
+                        ind1 = 0
+                        for val1 in vs1:
+                            for val2 in vs2:
+                                str1 = '{}-{}-{}'.format(e, val1, val2)
+                                ind2 = 0
+                                for val1_1 in vs1:
+                                    for val2_1 in vs2:
+                                        str2 = '{}-{}-{}'.format(e, val1_1, val2_1)
+                                        if ((str1, str2) in new_comparisons):
+                                            p_value = selected_pc[str1, str2]
+                                            if p_value < 0.05:
+                                                label_diff(ind1,ind2,'p=0.0370',np.arange(len(labels)),d_mean, ax[2, e_ind])
+                                        ind2 += 1
+                                ind1 += 1
+                        ax[2, e_ind].set_ylim([0, 5])
+                        ax[2, e_ind].tick_params(axis='x', labelsize=6)
+                    ax[2,0].set_ylabel('{}-{}'.format(g1, g2))
+
+                    filename = '{}/{}-{}.png'.format('interaction', g1, g2)
+                    fig.savefig(filename)
+                    plt.close(fig)
+                    print(filename)
+
     # def check_balanced_2(self, group1, group2):
     #     for g, vs in self.constraints:
     #         if group1 == g:

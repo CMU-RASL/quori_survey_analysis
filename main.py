@@ -1,5 +1,5 @@
 from helper import read_dof_csv, check_matches, check_matches, create_batch
-from helper import response_hist
+from helper import response_hist, analyze_demographics
 import numpy as np
 
 
@@ -19,6 +19,8 @@ user_arr = check_matches(qualtrics_filename, mturk_filename)
 user_arr2 = check_matches(qualtrics_filename2, mturk_filename2)
 user_arr.extend(user_arr2)
 
+# analyze_demographics(user_arr)
+
 #Step 2: Movement Array
 movement_arr = read_dof_csv(dof_csv_filename)
 
@@ -26,7 +28,7 @@ movement_arr = read_dof_csv(dof_csv_filename)
 batch = create_batch(user_arr, movement_arr)
 
 #Compare Emotions
-batch.compare_emotions()
+# batch.compare_emotions()
 
 #Demographics
 # batch.test_demo_group()
@@ -34,6 +36,8 @@ batch.compare_emotions()
 #Basic Group Comparison
 # batch.check_balanced()
 # batch.test_group()
+
+batch.interaction_effect()
 
 #Creating CSV of results
 # batch.create_csv()

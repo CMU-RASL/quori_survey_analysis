@@ -6,3 +6,6 @@ single_constraint/
 single_video/
 video_results/
 balanced/
+interaction/
+*.png
+*.pgf
